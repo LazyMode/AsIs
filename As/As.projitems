@@ -9,5 +9,6 @@
     <Import_RootNamespace>As</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CastAsUtility.cs" />
   </ItemGroup>
 </Project>
