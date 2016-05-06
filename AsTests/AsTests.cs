@@ -71,8 +71,8 @@ public class AsTests
         Assert.Equal(null, a.As<B>());
         Assert.IsType<B>(s.As<B>());
         Assert.IsType<B>(s.Cast<B>());
-        Assert.IsType<B>(1.TypeAs<B>(typeof(ValueType)));
-        Assert.IsType<B>(1.TypeCast<B>(typeof(ValueType)));
+        Assert.IsType<B>(1.As<B>());
+        Assert.IsType<B>(1.Cast<B>());
         Assert.IsType<B>(((int?)null).TypeAs<B>(typeof(string)));
         Assert.IsType<B>(((int?)null).TypeCast<B>(typeof(string)));
     }

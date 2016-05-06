@@ -56,11 +56,23 @@ public static class CastAsUtility
         {
             var item = new Item();
 
-            if (!IsNullable.GetValueOrDefault())
-                item.CastExpr = new Lazy<Expression<Func<object, T>>>(() => Lambda<Func<object, T>>(Convert(Convert(Param0, type), TypeT), Param0));
-            else // T is Nullable<?>
-                item.CastExpr = new Lazy<Expression<Func<object, T>>>(() =>
-                    Lambda<Func<object, T>>(Convert(Convert(Convert(Param0, type), TypeT.GetGenericArguments().Single()), TypeT), Param0));
+            item.CastExpr = new Lazy<Expression<Func<object, T>>>(() =>
+            {
+                try
+                {
+                    var expr = Convert(Param0, type);
+                    if (IsNullable.GetValueOrDefault())
+                        expr = Convert(expr, TypeT.GetGenericArguments().Single());
+                    return Lambda<Func<object, T>>(Convert(expr, TypeT), Param0);
+                }
+                catch
+                {
+                    type = type.BaseType;
+                    if (type.IsAssignableFrom(TypeT))
+                        throw;
+                    return For(type).CastExpr.Value;
+                }
+            });
             item.Cast = new Lazy<Func<object, T>>(() => item.CastExpr.Value.Compile());
 
             // T can not be null
