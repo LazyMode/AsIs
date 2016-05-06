@@ -36,12 +36,18 @@ public class AsTests
         Assert.Equal(null, ((object)null).Cast<object>());
 
         Assert.Equal(1d, 1.Cast<double>());
+        Assert.ThrowsAny<Exception>(() => (double)(object)1);
         Assert.Equal(1d, 1.Cast<double?>());
+        Assert.ThrowsAny<Exception>(() => (double?)(object)1);
         Assert.Equal(1, 1.Cast<object>());
+        Assert.Equal(1, (object)1);
+        Assert.ThrowsAny<Exception>(() => (string)(object)1);
         Assert.ThrowsAny<Exception>(() => 1.Cast<string>());
         Assert.ThrowsAny<Exception>(() => 1.As<double>());
         Assert.Equal(1d, 1.As<double?>());
+        Assert.Equal(null, 1 as double?);
         Assert.Equal(1, 1.As<object>());
+        Assert.Equal(null, (object)1 as string);
         Assert.Equal(null, 1.As<string>());
 
         Assert.Equal("", "".Cast<object>());
