@@ -8,13 +8,13 @@ public class AsTests
     {
         public static explicit operator string(A self)
             => self?.ToString();
+        public static implicit operator A(ValueType e)
+            => new A();
     }
 
     class B
     {
         public static implicit operator B(string s)
-            => new B();
-        public static implicit operator B(ValueType e)
             => new B();
     }
 
@@ -59,6 +59,8 @@ public class AsTests
 
         var a = new A();
         var s = a.ToString();
+        Assert.IsType<A>(1.As<A>());
+        Assert.IsType<A>(1.Cast<A>());
         Assert.Equal(a, a.Cast<A>());
         Assert.Equal(a, a.Cast<object>());
         Assert.Equal(s, a.Cast<string>());
@@ -71,9 +73,9 @@ public class AsTests
         Assert.Equal(null, a.As<B>());
         Assert.IsType<B>(s.As<B>());
         Assert.IsType<B>(s.Cast<B>());
-        Assert.IsType<B>(1.As<B>());
-        Assert.IsType<B>(1.Cast<B>());
         Assert.IsType<B>(((int?)null).TypeAs<B>(typeof(string)));
         Assert.IsType<B>(((int?)null).TypeCast<B>(typeof(string)));
+        Assert.IsType<B>(((string)null).ForCast().As<B>());
+        Assert.IsType<B>(((string)null).ForCast().To<B>());
     }
 }

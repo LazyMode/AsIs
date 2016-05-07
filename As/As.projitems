@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)CastAsUtility.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ForCast.cs" />
   </ItemGroup>
 </Project>
