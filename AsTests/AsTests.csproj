@@ -39,7 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="As, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\As.0.1\lib\portable-net4+win8\As.dll</HintPath>
+      <HintPath>..\packages\As.0.2\lib\portable-net4+win8\As.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
