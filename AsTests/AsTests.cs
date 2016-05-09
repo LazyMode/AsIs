@@ -19,19 +19,19 @@ public class AsTests
     }
 
     [Fact]
-    public void Cast()
+    public void Unchecked()
     {
         var sw = Stopwatch.StartNew();
 
-        CastTestCore();
+        UncheckedTestCore();
         Trace.WriteLine(sw.ElapsedMilliseconds);
         sw.Restart();
 
-        CastTestCore();
+        UncheckedTestCore();
         Trace.WriteLine(sw.ElapsedMilliseconds);
     }
 
-    void CastTestCore()
+    void UncheckedTestCore()
     {
         Assert.Equal(null, ((object)null).Cast<object>());
 

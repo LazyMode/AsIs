@@ -16,6 +16,9 @@ public static class CastAsUtility
 
     static bool? IsPrimitiveIntegral(Type type)
     {
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == TypeNullable)
+            type = type.GetGenericArguments().Single();
+
         switch (Type.GetTypeCode(type))
         {
             case TypeCode.Byte:
