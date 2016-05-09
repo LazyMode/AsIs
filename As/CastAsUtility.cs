@@ -16,10 +16,10 @@ public static class CastAsUtility
     {
         public class Item
         {
-            public Lazy<Func<object, T>> As;
-            public Lazy<Expression<Func<object, T>>> AsExpr;
-            public Lazy<Func<object, T>> Cast;
-            public Lazy<Expression<Func<object, T>>> CastExpr;
+            public Lazy<Func<object, T>> UAs;
+            public Lazy<Expression<Func<object, T>>> UAsExpr;
+            public Lazy<Func<object, T>> UCast;
+            public Lazy<Expression<Func<object, T>>> UCastExpr;
         }
 
         static readonly ConcurrentDictionary<Type, Lazy<Item>> Dict = new ConcurrentDictionary<Type, Lazy<Item>>();
@@ -56,7 +56,7 @@ public static class CastAsUtility
         {
             var item = new Item();
 
-            item.CastExpr = new Lazy<Expression<Func<object, T>>>(() =>
+            item.UCastExpr = new Lazy<Expression<Func<object, T>>>(() =>
             {
                 try
                 {
@@ -70,31 +70,31 @@ public static class CastAsUtility
                     type = type.BaseType;
                     if (type.IsAssignableFrom(TypeT))
                         throw;
-                    return For(type).CastExpr.Value;
+                    return For(type).UCastExpr.Value;
                 }
             });
-            item.Cast = new Lazy<Func<object, T>>(() => item.CastExpr.Value.Compile());
+            item.UCast = new Lazy<Func<object, T>>(() => item.UCastExpr.Value.Compile());
 
             // T can not be null
             if (!IsNullable.GetValueOrDefault(true))
                 return item;
 
-            item.AsExpr = new Lazy<Expression<Func<object, T>>>(() =>
+            item.UAsExpr = new Lazy<Expression<Func<object, T>>>(() =>
             {
                 try
                 {
-                    return item.CastExpr.Value;
+                    return item.UCastExpr.Value;
                 }
                 catch
                 {
                     return NullExpr;
                 }
             });
-            item.As = new Lazy<Func<object, T>>(() =>
+            item.UAs = new Lazy<Func<object, T>>(() =>
             {
                 try
                 {
-                    return item.Cast.Value;
+                    return item.UCast.Value;
                 }
                 catch
                 {
@@ -106,7 +106,7 @@ public static class CastAsUtility
         })).Value;
 
         public static T TypeCast(object o, Type type)
-            => For(type).Cast.Value(o);
+            => For(type).UCast.Value(o);
     }
 
     static class AsProxy<T>
@@ -118,9 +118,9 @@ public static class CastAsUtility
         }
 
         public static T TypeAs(object o, Type type)
-            => CastImpl<T>.For(type).As.Value(o);
+            => CastImpl<T>.For(type).UAs.Value(o);
         public static Expression<Func<object, T>> GetAsExprFor(Type type)
-            => CastImpl<T>.For(type).AsExpr.Value;
+            => CastImpl<T>.For(type).UAsExpr.Value;
     }
 
     public static T TypeAs<T>(this object o, Type type)
@@ -138,5 +138,5 @@ public static class CastAsUtility
     public static Expression<Func<object, T>> GetAsExprFor<T>(this Type type)
         => AsProxy<T>.GetAsExprFor(type);
     public static Expression<Func<object, T>> GetCastExprFor<T>(this Type type)
-        => CastImpl<T>.For(type).CastExpr.Value;
+        => CastImpl<T>.For(type).UCastExpr.Value;
 }
