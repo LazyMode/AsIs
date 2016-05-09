@@ -9,23 +9,57 @@ public static class CastAsUtility
 {
     static readonly Type TypeObject = typeof(object);
     static readonly Type TypeNullable = typeof(Nullable<>);
+    static readonly Type TypeIntPtr = typeof(IntPtr);
+    static readonly Type TypeUIntPtr = typeof(UIntPtr);
 
     static readonly ParameterExpression Param0 = Parameter(TypeObject);
 
+    static bool? IsPrimitiveIntegral(Type type)
+    {
+        switch (Type.GetTypeCode(type))
+        {
+            case TypeCode.Byte:
+            case TypeCode.SByte:
+            case TypeCode.Int16:
+            case TypeCode.UInt16:
+            case TypeCode.Int32:
+            case TypeCode.UInt32:
+            case TypeCode.Int64:
+            case TypeCode.UInt64:
+            case TypeCode.Char:
+                return true;
+
+            case TypeCode.Single:
+            case TypeCode.Double:
+                return false;
+        }
+
+        if (type == TypeIntPtr || type == TypeUIntPtr)
+            return true;
+
+        return null;
+    }
+
     static class CastImpl<T>
     {
+        public static readonly Type TypeT = typeof(T);
+        public static readonly bool? IsPrimitiveIntegral = IsPrimitiveIntegral(TypeT);
+        public static readonly bool? IsNullable;
+
         public class Item
         {
             public Lazy<Func<object, T>> UAs;
             public Lazy<Expression<Func<object, T>>> UAsExpr;
             public Lazy<Func<object, T>> UCast;
             public Lazy<Expression<Func<object, T>>> UCastExpr;
+
+            public Lazy<Func<object, T>> CAs;
+            public Lazy<Expression<Func<object, T>>> CAsExpr;
+            public Lazy<Func<object, T>> CCast;
+            public Lazy<Expression<Func<object, T>>> CCastExpr;
         }
 
         static readonly ConcurrentDictionary<Type, Lazy<Item>> Dict = new ConcurrentDictionary<Type, Lazy<Item>>();
-
-        public static readonly Type TypeT = typeof(T);
-        public static readonly bool? IsNullable;
 
         static readonly Expression<Func<object, T>> NullExpr;
         static readonly Func<object, T> NullFunc;
@@ -75,38 +109,95 @@ public static class CastAsUtility
             });
             item.UCast = new Lazy<Func<object, T>>(() => item.UCastExpr.Value.Compile());
 
-            // T can not be null
-            if (!IsNullable.GetValueOrDefault(true))
-                return item;
+            if (IsNullable.GetValueOrDefault(true))
+            {
+                item.UAsExpr = new Lazy<Expression<Func<object, T>>>(() =>
+                {
+                    try
+                    {
+                        return item.UCastExpr.Value;
+                    }
+                    catch
+                    {
+                        return NullExpr;
+                    }
+                });
+                item.UAs = new Lazy<Func<object, T>>(() =>
+                {
+                    try
+                    {
+                        return item.UCast.Value;
+                    }
+                    catch
+                    {
+                        return NullFunc;
+                    }
+                });
+            }
 
-            item.UAsExpr = new Lazy<Expression<Func<object, T>>>(() =>
+            var useChecked = IsPrimitiveIntegral.GetValueOrDefault() && IsPrimitiveIntegral(type).HasValue;
+            if (!useChecked)
+            {
+                item.CCastExpr = item.UCastExpr;
+                item.CCast = item.UCast;
+                item.CAsExpr = item.UAsExpr;
+                item.CAs = item.UAs;
+
+                return item;
+            }
+
+            item.CCastExpr = new Lazy<Expression<Func<object, T>>>(() =>
             {
                 try
                 {
-                    return item.UCastExpr.Value;
+                    var expr = Convert(Param0, type);
+                    expr = (!IsNullable.GetValueOrDefault()) ? ConvertChecked(expr, TypeT)
+                         : Convert(ConvertChecked(expr, TypeT.GetGenericArguments().Single()), TypeT);
+                    return Lambda<Func<object, T>>(expr, Param0);
                 }
                 catch
                 {
-                    return NullExpr;
+                    type = type.BaseType;
+                    if (type.IsAssignableFrom(TypeT))
+                        throw;
+                    return For(type).CCastExpr.Value;
                 }
             });
-            item.UAs = new Lazy<Func<object, T>>(() =>
+            item.CCast = new Lazy<Func<object, T>>(() => item.CCastExpr.Value.Compile());
+
+            if (IsNullable.GetValueOrDefault(true))
             {
-                try
+                item.CAsExpr = new Lazy<Expression<Func<object, T>>>(() =>
+              {
+                  try
+                  {
+                      return item.CCastExpr.Value;
+                  }
+                  catch
+                  {
+                      return NullExpr;
+                  }
+              });
+                item.CAs = new Lazy<Func<object, T>>(() =>
                 {
-                    return item.UCast.Value;
-                }
-                catch
-                {
-                    return NullFunc;
-                }
-            });
+                    try
+                    {
+                        return item.CCast.Value;
+                    }
+                    catch
+                    {
+                        return NullFunc;
+                    }
+                });
+            }
 
             return item;
         })).Value;
 
         public static T TypeCast(object o, Type type)
             => For(type).UCast.Value(o);
+        public static T TypeCastChecked(object o, Type type)
+            => For(type).CCast.Value(o);
     }
 
     static class AsProxy<T>
@@ -119,24 +210,41 @@ public static class CastAsUtility
 
         public static T TypeAs(object o, Type type)
             => CastImpl<T>.For(type).UAs.Value(o);
+        public static T TypeAsChecked(object o, Type type)
+            => CastImpl<T>.For(type).CAs.Value(o);
         public static Expression<Func<object, T>> GetAsExprFor(Type type)
             => CastImpl<T>.For(type).UAsExpr.Value;
+        public static Expression<Func<object, T>> GetAsExprForChecked(Type type)
+            => CastImpl<T>.For(type).CAsExpr.Value;
     }
 
     public static T TypeAs<T>(this object o, Type type)
         => AsProxy<T>.TypeAs(o, type);
+    public static T TypeAsChecked<T>(this object o, Type type)
+        => AsProxy<T>.TypeAsChecked(o, type);
 
     public static T TypeCast<T>(this object o, Type type)
         => CastImpl<T>.TypeCast(o, type);
+    public static T TypeCastChecked<T>(this object o, Type type)
+        => CastImpl<T>.TypeCastChecked(o, type);
 
     public static T As<T>(this object o)
         => (o == null) ? default(T) : AsProxy<T>.TypeAs(o, o.GetType());
+    public static T AsChecked<T>(this object o)
+        => (o == null) ? default(T) : AsProxy<T>.TypeAsChecked(o, o.GetType());
 
     public static T Cast<T>(this object o)
         => (o == null) ? default(T) : CastImpl<T>.TypeCast(o, o.GetType());
+    public static T CastChecked<T>(this object o)
+        => (o == null) ? default(T) : CastImpl<T>.TypeCastChecked(o, o.GetType());
 
     public static Expression<Func<object, T>> GetAsExprFor<T>(this Type type)
         => AsProxy<T>.GetAsExprFor(type);
+    public static Expression<Func<object, T>> GetAsExprForChecked<T>(this Type type)
+        => AsProxy<T>.GetAsExprForChecked(type);
+
     public static Expression<Func<object, T>> GetCastExprFor<T>(this Type type)
         => CastImpl<T>.For(type).UCastExpr.Value;
+    public static Expression<Func<object, T>> GetCastExprForChecked<T>(this Type type)
+        => CastImpl<T>.For(type).CCastExpr.Value;
 }

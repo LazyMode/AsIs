@@ -12,8 +12,12 @@ public struct ForCast<TSource>
 
     public TTarget As<TTarget>()
         => Source.TypeAs<TTarget>(TypeSource);
+    public TTarget AsChecked<TTarget>()
+        => Source.TypeAsChecked<TTarget>(TypeSource);
     public TTarget To<TTarget>()
         => Source.TypeCast<TTarget>(TypeSource);
+    public TTarget ToChecked<TTarget>()
+        => Source.TypeCastChecked<TTarget>(TypeSource);
 }
 
 public static class ForCastEx
