@@ -4,11 +4,7 @@ public struct ForCast<TSource>
 {
     private static Type TypeSource = typeof(TSource);
 
-    public TSource Source;
-    public ForCast(TSource source)
-    {
-        Source = source;
-    }
+    public TSource Source { get; internal set; }
 
     public TTarget As<TTarget>()
         => Source.TypeAs<TTarget>(TypeSource);
@@ -23,5 +19,5 @@ public struct ForCast<TSource>
 public static class ForCastEx
 {
     public static ForCast<T> ForCast<T>(this T source)
-        => new ForCast<T>(source);
+        => new ForCast<T> { Source = source };
 }
