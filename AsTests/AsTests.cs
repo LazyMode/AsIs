@@ -33,16 +33,18 @@ public class AsTests
 
     void UncheckedTestCore()
     {
-        Assert.Equal(null, ((object)null).Cast<object>());
+        Assert.Equal(-128, 128.To<sbyte>());
 
-        Assert.Equal(1d, 1.Cast<double>());
+        Assert.Equal(null, ((object)null).To<object>());
+
+        Assert.Equal(1d, 1.To<double>());
         Assert.ThrowsAny<Exception>(() => (double)(object)1);
-        Assert.Equal(1d, 1.Cast<double?>());
+        Assert.Equal(1d, 1.To<double?>());
         Assert.ThrowsAny<Exception>(() => (double?)(object)1);
-        Assert.Equal(1, 1.Cast<object>());
+        Assert.Equal(1, 1.To<object>());
         Assert.Equal(1, (object)1);
         Assert.ThrowsAny<Exception>(() => (string)(object)1);
-        Assert.ThrowsAny<Exception>(() => 1.Cast<string>());
+        Assert.ThrowsAny<Exception>(() => 1.To<string>());
         Assert.ThrowsAny<Exception>(() => 1.As<double>());
         Assert.Equal(1d, 1.As<double?>());
         Assert.Equal(null, 1 as double?);
@@ -50,9 +52,9 @@ public class AsTests
         Assert.Equal(null, (object)1 as string);
         Assert.Equal(null, 1.As<string>());
 
-        Assert.Equal("", "".Cast<object>());
-        Assert.Equal("", "".Cast<string>());
-        Assert.ThrowsAny<Exception>(() => "".Cast<Guid>());
+        Assert.Equal("", "".To<object>());
+        Assert.Equal("", "".To<string>());
+        Assert.ThrowsAny<Exception>(() => "".To<Guid>());
         Assert.ThrowsAny<Exception>(() => "".As<double>());
         Assert.Equal("", "".As<object>());
         Assert.Equal("", "".As<string>());
@@ -60,22 +62,40 @@ public class AsTests
         var a = new A();
         var s = a.ToString();
         Assert.IsType<A>(1.As<A>());
-        Assert.IsType<A>(1.Cast<A>());
-        Assert.Equal(a, a.Cast<A>());
-        Assert.Equal(a, a.Cast<object>());
-        Assert.Equal(s, a.Cast<string>());
+        Assert.IsType<A>(1.To<A>());
+        Assert.Equal(a, a.To<A>());
+        Assert.Equal(a, a.To<object>());
+        Assert.Equal(s, a.To<string>());
         Assert.Equal(a, a.As<A>());
         Assert.Equal(a, a.As<object>());
         Assert.Equal(s, a.As<string>());
 
         Assert.Equal(null, ((int?)null).As<B>());
-        Assert.ThrowsAny<Exception>(() => a.Cast<B>());
+        Assert.ThrowsAny<Exception>(() => a.To<B>());
         Assert.Equal(null, a.As<B>());
         Assert.IsType<B>(s.As<B>());
-        Assert.IsType<B>(s.Cast<B>());
-        Assert.IsType<B>(((int?)null).TypeAs<B>(typeof(string)));
-        Assert.IsType<B>(((int?)null).TypeCast<B>(typeof(string)));
+        Assert.IsType<B>(s.To<B>());
+        Assert.IsType<B>(((int?)null).As<B>(typeof(string)));
+        Assert.IsType<B>(((int?)null).To<B>(typeof(string)));
         Assert.IsType<B>(((string)null).ForCast().As<B>());
         Assert.IsType<B>(((string)null).ForCast().To<B>());
+    }
+
+    [Fact]
+    public void Checked()
+    {
+        var sw = Stopwatch.StartNew();
+
+        CheckedTestCore();
+        Trace.WriteLine(sw.ElapsedMilliseconds);
+        sw.Restart();
+
+        CheckedTestCore();
+        Trace.WriteLine(sw.ElapsedMilliseconds);
+    }
+
+    void CheckedTestCore()
+    {
+        Assert.ThrowsAny<Exception>(() => 128.ToChecked<sbyte>());
     }
 }
