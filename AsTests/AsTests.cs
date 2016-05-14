@@ -20,7 +20,7 @@ public class AsTests
 
     class ClassForNullable
     {
-        public int Value;
+        public int? Value;
 
         //public static explicit operator int? (ClassForNullable o)
         //    => o?.Value;
@@ -29,7 +29,7 @@ public class AsTests
         public static explicit operator ClassForNullable(int i)
             => new ClassForNullable { Value = i };
         public static explicit operator ClassForNullable(int? i)
-            => i.HasValue ? (ClassForNullable)i.Value : null;
+            => new ClassForNullable { Value = i };
     }
     class ClassNonNullable
     {
@@ -51,15 +51,19 @@ public class AsTests
         Assert.Equal(1, 1.To<ClassForNullable>().Value);
         Assert.Equal(null, i.As<ClassForNullable>());
         Assert.Equal(null, i.To<ClassForNullable>());
-        Assert.Equal(1, i1.As<ClassForNullable>().Value);
-        Assert.Equal(1, i1.To<ClassForNullable>().Value);
+        Assert.Equal(1, i1.ForCast().As<ClassForNullable>().Value);
+        Assert.Equal(1, i1.ForCast().To<ClassForNullable>().Value);
+        Assert.Equal(null, i.ForCast().As<ClassForNullable>().Value);
+        Assert.Equal(null, i.ForCast().To<ClassForNullable>().Value);
 
         Assert.Equal(1, 1.As<ClassNonNullable>().Value);
         Assert.Equal(1, 1.To<ClassNonNullable>().Value);
         Assert.Equal(null, i.As<ClassNonNullable>());
         Assert.Equal(null, i.To<ClassNonNullable>());
-        Assert.Equal(1, i1.As<ClassNonNullable>().Value);
-        Assert.Equal(1, i1.To<ClassNonNullable>().Value);
+        Assert.Equal(1, i1.ForCast().As<ClassNonNullable>().Value);
+        Assert.Equal(1, i1.ForCast().To<ClassNonNullable>().Value);
+        //Assert.Equal(null, i.ForCast().As<ClassNonNullable>());
+        //Assert.Equal(null, i.ForCast().To<ClassNonNullable>());
     }
 
 
