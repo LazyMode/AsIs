@@ -2,8 +2,12 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
-
+using System.Reflection;
 using static System.Linq.Expressions.Expression;
+
+#if NO_TYPEINFO
+using TypeInfo = System.Type;
+#endif
 
 public static class CastAsUtility
 {
@@ -14,7 +18,7 @@ public static class CastAsUtility
 
     static readonly ParameterExpression Param0 = Parameter(TypeObject);
 
-    static Type GetNonNullable(Type type)
+    static Type GetNonNullable(TypeInfo type)
     {
         if (!type.IsGenericType)
             return null;
@@ -22,9 +26,60 @@ public static class CastAsUtility
             throw new NotSupportedException();
         if (type.GetGenericTypeDefinition() != TypeNullable)
             return null;
+
+#if NO_TYPEINFO
         return type.GetGenericArguments().Single();
+#else
+        return type.GenericTypeArguments.Single();
+#endif
     }
 
+#if NO_TYPECODE
+    static readonly Type TypeSingle = typeof(float);
+    static readonly Type TypeDouble = typeof(double);
+
+    static readonly Type TypeByte = typeof(Byte);
+    static readonly Type TypeSByte = typeof(SByte);
+    static readonly Type TypeInt16 = typeof(Int16);
+    static readonly Type TypeUInt16 = typeof(UInt16);
+    static readonly Type TypeInt32 = typeof(Int32);
+    static readonly Type TypeUInt32 = typeof(UInt32);
+    static readonly Type TypeInt64 = typeof(Int64);
+    static readonly Type TypeUInt64 = typeof(UInt64);
+    static readonly Type TypeChar = typeof(Char);
+
+    static bool? IsPrimitiveIntegral(Type type)
+    {
+        type = GetNonNullable(type.GetTypeInfo()) ?? type;
+
+        if (type == TypeSingle || type == TypeDouble)
+            return false;
+
+        if (type == TypeIntPtr || type == TypeUIntPtr)
+            return true;
+
+        if (type == TypeByte)
+            return true;
+        if (type == TypeSByte)
+            return true;
+        if (type == TypeInt16)
+            return true;
+        if (type == TypeUInt16)
+            return true;
+        if (type == TypeInt32)
+            return true;
+        if (type == TypeUInt32)
+            return true;
+        if (type == TypeInt64)
+            return true;
+        if (type == TypeUInt64)
+            return true;
+        if (type == TypeChar)
+            return true;
+
+        return null;
+    }
+#else
     static bool? IsPrimitiveIntegral(Type type)
     {
         type = GetNonNullable(type) ?? type;
@@ -52,6 +107,7 @@ public static class CastAsUtility
 
         return null;
     }
+#endif
 
     static class CastImpl<T>
     {
@@ -80,16 +136,21 @@ public static class CastAsUtility
 
         static CastImpl()
         {
-            if (ThisType.IsGenericTypeDefinition)
+#if NO_TYPEINFO
+            var type = ThisType;
+#else
+            var type = ThisType.GetTypeInfo();
+#endif
+            if (type.IsGenericTypeDefinition)
                 throw new NotSupportedException();
 
-            if (!ThisType.IsValueType)
+            if (!type.IsValueType)
                 IsNullable = null;
-            else if (!ThisType.IsGenericType)
+            else if (!type.IsGenericType)
                 IsNullable = false;
             else
             {
-                TypeNonNullable = GetNonNullable(ThisType);
+                TypeNonNullable = GetNonNullable(type);
                 IsNullable = TypeNonNullable != null;
             }
 
@@ -104,7 +165,12 @@ public static class CastAsUtility
             => @checked ? ConvertChecked(expr, type) : Convert(expr, type);
         static Expression<Func<object, T>> LambdaFactory(Expression expr, Type type, bool @checked)
         {
-            var nonNullableType = GetNonNullable(type);
+#if NO_TYPEINFO
+            var ti = type;
+#else
+            var ti = type.GetTypeInfo();
+#endif
+            var nonNullableType = GetNonNullable(ti);
 
             if (IsNullable.HasValue)
             {
@@ -165,9 +231,14 @@ public static class CastAsUtility
             }
             catch
             {
-                type = type.BaseType;
+                type = ti.BaseType;
+#if NO_TYPEINFO
                 if (type.IsAssignableFrom(ThisType))
                     throw;
+#else
+                if (type == ThisType || ThisType.GetTypeInfo().IsSubclassOf(type))
+                    throw;
+#endif
                 return For(type).CToLambda.Value;
             }
         }
