@@ -46,6 +46,7 @@ public class AsTests
     {
         int? i = null;
         int? i1 = 1;
+
         Assert.Equal(1, 1.As<ClassForNullable>().Value);
         Assert.Equal(1, 1.To<ClassForNullable>().Value);
         Assert.Equal(null, i.As<ClassForNullable>());
