@@ -14,10 +14,20 @@ public static class CastAsUtility
 
     static readonly ParameterExpression Param0 = Parameter(TypeObject);
 
+    static Type GetNonNullable(Type type)
+    {
+        if (!type.IsGenericType)
+            return null;
+        if (type.IsGenericTypeDefinition)
+            throw new NotSupportedException();
+        if (type.GetGenericTypeDefinition() != TypeNullable)
+            return null;
+        return type.GetGenericArguments().Single();
+    }
+
     static bool? IsPrimitiveIntegral(Type type)
     {
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == TypeNullable)
-            type = type.GetGenericArguments().Single();
+        type = GetNonNullable(type) ?? type;
 
         switch (Type.GetTypeCode(type))
         {
@@ -45,8 +55,9 @@ public static class CastAsUtility
 
     static class CastImpl<T>
     {
-        public static readonly Type TypeT = typeof(T);
-        public static readonly bool? IsPrimitiveIntegral = IsPrimitiveIntegral(TypeT);
+        public static readonly Type ThisType = typeof(T);
+        public static readonly Type TypeNonNullable;
+        public static readonly bool? IsPrimitiveIntegral = IsPrimitiveIntegral(ThisType);
         public static readonly bool? IsNullable;
 
         public class Item
@@ -69,21 +80,22 @@ public static class CastAsUtility
 
         static CastImpl()
         {
-            if (TypeT.IsGenericTypeDefinition)
+            if (ThisType.IsGenericTypeDefinition)
                 throw new NotSupportedException();
 
-            if (!TypeT.IsValueType)
+            if (!ThisType.IsValueType)
                 IsNullable = null;
-            else if (!TypeT.IsGenericType)
+            else if (!ThisType.IsGenericType)
                 IsNullable = false;
             else
             {
-                IsNullable = (TypeT.GetGenericTypeDefinition() == TypeNullable);
+                TypeNonNullable = GetNonNullable(ThisType);
+                IsNullable = TypeNonNullable != null;
             }
 
             if (IsNullable.GetValueOrDefault(true))
             {
-                NullExpr = Lambda<Func<object, T>>(Constant(null, TypeT), Param0);
+                NullExpr = Lambda<Func<object, T>>(Constant(null, ThisType), Param0);
                 NullFunc = NullExpr.Compile();
             }
         }
@@ -91,21 +103,21 @@ public static class CastAsUtility
         public static Item For(Type type)
         => Dict.GetOrAdd(type, new Lazy<Item>(() =>
         {
+            var expr0 = Convert(Param0, type);
             var item = new Item();
 
             item.UToExpr = new Lazy<Expression<Func<object, T>>>(() =>
             {
                 try
                 {
-                    var expr = Convert(Param0, type);
-                    if (IsNullable.GetValueOrDefault())
-                        expr = Convert(expr, TypeT.GetGenericArguments().Single());
-                    return Lambda<Func<object, T>>(Convert(expr, TypeT), Param0);
+                    var expr = !IsNullable.GetValueOrDefault() ? Convert(expr0, ThisType)
+                         : Convert(Convert(expr0, TypeNonNullable), ThisType);
+                    return Lambda<Func<object, T>>(expr, Param0);
                 }
                 catch
                 {
                     type = type.BaseType;
-                    if (type.IsAssignableFrom(TypeT))
+                    if (type.IsAssignableFrom(ThisType))
                         throw;
                     return For(type).UToExpr.Value;
                 }
@@ -153,15 +165,14 @@ public static class CastAsUtility
             {
                 try
                 {
-                    var expr = Convert(Param0, type);
-                    expr = (!IsNullable.GetValueOrDefault()) ? ConvertChecked(expr, TypeT)
-                         : Convert(ConvertChecked(expr, TypeT.GetGenericArguments().Single()), TypeT);
+                    var expr = !IsNullable.GetValueOrDefault() ? ConvertChecked(expr0, ThisType)
+                         : Convert(ConvertChecked(expr0, TypeNonNullable), ThisType);
                     return Lambda<Func<object, T>>(expr, Param0);
                 }
                 catch
                 {
                     type = type.BaseType;
-                    if (type.IsAssignableFrom(TypeT))
+                    if (type.IsAssignableFrom(ThisType))
                         throw;
                     return For(type).CToExpr.Value;
                 }
@@ -171,16 +182,16 @@ public static class CastAsUtility
             if (IsNullable.GetValueOrDefault(true))
             {
                 item.CAsExpr = new Lazy<Expression<Func<object, T>>>(() =>
-              {
-                  try
-                  {
-                      return item.CToExpr.Value;
-                  }
-                  catch
-                  {
-                      return NullExpr;
-                  }
-              });
+                {
+                    try
+                    {
+                        return item.CToExpr.Value;
+                    }
+                    catch
+                    {
+                        return NullExpr;
+                    }
+                });
                 item.CAs = new Lazy<Func<object, T>>(() =>
                 {
                     try
