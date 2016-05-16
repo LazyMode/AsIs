@@ -38,20 +38,18 @@ public static class CastAsUtility
     static readonly Type TypeSingle = typeof(float);
     static readonly Type TypeDouble = typeof(double);
 
-    static readonly Type TypeByte = typeof(Byte);
-    static readonly Type TypeSByte = typeof(SByte);
-    static readonly Type TypeInt16 = typeof(Int16);
-    static readonly Type TypeUInt16 = typeof(UInt16);
-    static readonly Type TypeInt32 = typeof(Int32);
-    static readonly Type TypeUInt32 = typeof(UInt32);
-    static readonly Type TypeInt64 = typeof(Int64);
-    static readonly Type TypeUInt64 = typeof(UInt64);
-    static readonly Type TypeChar = typeof(Char);
+    static readonly Type TypeByte = typeof(byte);
+    static readonly Type TypeSByte = typeof(sbyte);
+    static readonly Type TypeInt16 = typeof(short);
+    static readonly Type TypeUInt16 = typeof(ushort);
+    static readonly Type TypeInt32 = typeof(int);
+    static readonly Type TypeUInt32 = typeof(uint);
+    static readonly Type TypeInt64 = typeof(long);
+    static readonly Type TypeUInt64 = typeof(ulong);
+    static readonly Type TypeChar = typeof(char);
 
     static bool? IsPrimitiveIntegral(Type type)
     {
-        type = GetNonNullable(type.GetTypeInfo()) ?? type;
-
         if (type == TypeSingle || type == TypeDouble)
             return false;
 
@@ -82,8 +80,6 @@ public static class CastAsUtility
 #else
     static bool? IsPrimitiveIntegral(Type type)
     {
-        type = GetNonNullable(type) ?? type;
-
         switch (Type.GetTypeCode(type))
         {
             case TypeCode.Byte:
@@ -137,20 +133,20 @@ public static class CastAsUtility
         static CastImpl()
         {
 #if NO_TYPEINFO
-            var type = ThisType;
+            var ti = ThisType;
 #else
-            var type = ThisType.GetTypeInfo();
+            var ti = ThisType.GetTypeInfo();
 #endif
-            if (type.IsGenericTypeDefinition)
+            if (ti.IsGenericTypeDefinition)
                 throw new NotSupportedException();
 
-            if (!type.IsValueType)
+            if (!ti.IsValueType)
                 IsNullable = null;
-            else if (!type.IsGenericType)
+            else if (!ti.IsGenericType)
                 IsNullable = false;
             else
             {
-                TypeNonNullable = GetNonNullable(type);
+                TypeNonNullable = GetNonNullable(ti);
                 IsNullable = TypeNonNullable != null;
             }
 
@@ -165,20 +161,12 @@ public static class CastAsUtility
             => @checked ? ConvertChecked(expr, type) : Convert(expr, type);
         static Expression<Func<object, T>> LambdaFactory(Expression expr, Type type, bool @checked)
         {
-#if NO_TYPEINFO
-            var ti = type;
-#else
-            var ti = type.GetTypeInfo();
-#endif
-            var nonNullableType = GetNonNullable(ti);
-
             if (IsNullable.HasValue)
             {
-                if (IsNullable.Value)
+                if (!IsNullable.Value)
+                    expr = ConvertFactory(expr, ThisType, @checked);
+                else
                 {
-                    if (nonNullableType != null)
-                        throw new NotSupportedException();
-
                     try
                     {
                         expr = ConvertFactory(expr, ThisType, @checked);
@@ -189,61 +177,31 @@ public static class CastAsUtility
                         expr = Convert(expr, ThisType);
                     }
                 }
-                else
-                {
-                    if (nonNullableType == null)
-                        expr = ConvertFactory(expr, ThisType, @checked);
-                    else
-                    {
-                        try
-                        {
-                            expr = ConvertFactory(expr, ThisType, @checked);
-                        }
-                        catch
-                        {
-                            expr = ConvertFactory(expr, nonNullableType, @checked);
-                            expr = Convert(expr, ThisType);
-                        }
-                    }
-                }
 
                 return Lambda<Func<object, T>>(expr, Param0);
             }
 
             try
             {
-                if (nonNullableType == null)
-                    expr = Convert(expr, ThisType);
-                else
-                {
-                    try
-                    {
-                        expr = Convert(expr, ThisType);
-                    }
-                    catch
-                    {
-                        expr = Convert(expr, nonNullableType);
-                        expr = Convert(expr, ThisType);
-                    }
-                }
+                expr = Convert(expr, ThisType);
 
                 return Lambda<Func<object, T>>(expr, Param0);
             }
             catch
             {
-                type = ti.BaseType;
 #if NO_TYPEINFO
+                type = type.BaseType;
                 if (type.IsAssignableFrom(ThisType))
                     throw;
 #else
+                type = type.GetTypeInfo().BaseType;
                 if (type == ThisType || ThisType.GetTypeInfo().IsSubclassOf(type))
                     throw;
 #endif
                 return For(type).CToLambda.Value;
             }
         }
-        public static Item For(Type type)
-        => Dict.GetOrAdd(type, new Lazy<Item>(() =>
+        static Item TupleFactory(Type type)
         {
             var expr0 = Convert(Param0, type);
             var item = new Item();
@@ -318,6 +276,18 @@ public static class CastAsUtility
             }
 
             return item;
+        }
+        public static Item For(Type type)
+        => Dict.GetOrAdd(type, new Lazy<Item>(() =>
+        {
+#if NO_TYPEINFO
+            var underlying = GetNonNullable(type);
+#else
+            var underlying = GetNonNullable(type.GetTypeInfo());
+#endif
+            if (underlying != null)
+                return For(underlying);
+            return TupleFactory(type);
         })).Value;
 
         public static T To(object o, Type type)
@@ -345,16 +315,6 @@ public static class CastAsUtility
         public static Expression<Func<object, T>> GetAsLambdaForChecked(Type type)
             => CastImpl<T>.For(type).CAsLambda.Value;
     }
-
-    public static T As<T>(this object o, Type type)
-        => AsProxy<T>.As(o, type);
-    public static T AsChecked<T>(this object o, Type type)
-        => AsProxy<T>.AsChecked(o, type);
-
-    public static T To<T>(this object o, Type type)
-        => CastImpl<T>.To(o, type);
-    public static T ToChecked<T>(this object o, Type type)
-        => CastImpl<T>.ToChecked(o, type);
 
     public static T As<T>(this object o)
         => (o == null) ? AsProxy<T>.Default : AsProxy<T>.As(o, o.GetType());

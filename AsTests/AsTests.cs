@@ -51,19 +51,11 @@ public class AsTests
         Assert.Equal(1, 1.To<ClassForNullable>().Value);
         Assert.Equal(null, i.As<ClassForNullable>());
         Assert.Equal(null, i.To<ClassForNullable>());
-        Assert.Equal(1, i1.ForCast().As<ClassForNullable>().Value);
-        Assert.Equal(1, i1.ForCast().To<ClassForNullable>().Value);
-        Assert.Equal(null, i.ForCast().As<ClassForNullable>().Value);
-        Assert.Equal(null, i.ForCast().To<ClassForNullable>().Value);
 
         Assert.Equal(1, 1.As<ClassNonNullable>().Value);
         Assert.Equal(1, 1.To<ClassNonNullable>().Value);
         Assert.Equal(null, i.As<ClassNonNullable>());
         Assert.Equal(null, i.To<ClassNonNullable>());
-        Assert.Equal(1, i1.ForCast().As<ClassNonNullable>().Value);
-        Assert.Equal(1, i1.ForCast().To<ClassNonNullable>().Value);
-        //Assert.Equal(null, i.ForCast().As<ClassNonNullable>());
-        //Assert.Equal(null, i.ForCast().To<ClassNonNullable>());
     }
 
 
@@ -124,10 +116,6 @@ public class AsTests
         Assert.Equal(null, a.As<B>());
         Assert.IsType<B>(s.As<B>());
         Assert.IsType<B>(s.To<B>());
-        Assert.IsType<B>(((int?)null).As<B>(typeof(string)));
-        Assert.IsType<B>(((int?)null).To<B>(typeof(string)));
-        Assert.IsType<B>(((string)null).ForCast().As<B>());
-        Assert.IsType<B>(((string)null).ForCast().To<B>());
     }
 
     [Fact]
