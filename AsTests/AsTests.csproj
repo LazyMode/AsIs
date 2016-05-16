@@ -39,7 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AsIs, Version=0.5.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\AsIs.0.5\lib\portable-net4+win8\AsIs.dll</HintPath>
+      <HintPath>..\packages\AsIs.0.5.1\lib\portable-net4+win8+wpa+MonoAndroid\AsIs.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
