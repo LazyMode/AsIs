@@ -9,7 +9,7 @@ using static System.Linq.Expressions.Expression;
 using TypeInfo = System.Type;
 #endif
 
-public static class CastAsUtility
+public static class AsIsUtility
 {
     static readonly Type TypeObject = typeof(object);
     static readonly Type TypeNullable = typeof(Nullable<>);

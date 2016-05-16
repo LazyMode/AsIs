@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using Xunit;
 
-public class AsTests
+public class AsIsTests
 {
     class A
     {
