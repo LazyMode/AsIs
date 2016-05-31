@@ -9,7 +9,7 @@
     <Import_RootNamespace>AsIs</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)AsIsUtility.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)AsIs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
   </ItemGroup>
 </Project>

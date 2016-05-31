@@ -9,8 +9,11 @@ using static System.Linq.Expressions.Expression;
 using TypeInfo = System.Type;
 #endif
 
-public static class AsIsUtility
+public static class AsIs
 {
+    public static T Run<T>(Func<T> func) => func();
+    public static void Run(Action logic) => logic();
+
     static readonly Type TypeObject = typeof(object);
     static readonly Type TypeNullable = typeof(Nullable<>);
     static readonly Type TypeIntPtr = typeof(IntPtr);
