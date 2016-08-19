@@ -17,16 +17,16 @@ public static class Singleton<T>
     static readonly bool IsValueType = ThisType.GetTypeInfo().IsValueType;
 #endif
 
+    static Lazy<object> LazyAccess
+    {
+        get { return Singleton.Singletons[ThisType]; }
+        set { Singleton.Singletons[ThisType] = value; }
+    }
+
     public static T Instance
     {
-        get
-        {
-            return (T)Singleton.Singletons[ThisType].Value;
-        }
-        set
-        {
-            Singleton.Singletons[ThisType] = new Lazy<object>(() => value);
-        }
+        get { return (T)LazyAccess.Value; }
+        set { LazyAccess = new Lazy<object>(() => value); }
     }
 
     static bool Register(Func<object> factory, bool? throwIfExist = null)
@@ -35,7 +35,7 @@ public static class Singleton<T>
 
         if (!throwIfExist.HasValue)
         {
-            Singleton.Singletons[ThisType] = lazy;
+            LazyAccess = lazy;
             return true;
         }
 
@@ -52,6 +52,6 @@ public static class Singleton<T>
      => Register(IsValueType ? () => factory() : (Func<object>)(MulticastDelegate)factory,
          throwIfExist);
     public static T Register(T value, bool? throwIfExist = null)
-     => value.Coalesce(() => Register(() => (object)value, 
+     => value.Coalesce(() => Register(() => (object)value,
          throwIfExist));
 }
