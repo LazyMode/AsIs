@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
         <id>AsIs</id>
-        <version>0.8</version>
+        <version>0.9-a</version>
         <authors>OmniKits</authors>
         <projectUrl>https://github.com/OmniKits/as</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -11,7 +11,7 @@ This should also allow you to cast from unspecified type to anything as long as 
         <tags>as is cast DirectCast isinst TryCast</tags>
     </metadata>
     <files>
-        <file src="Release\PCL40\AsIs.dll" target="lib\portable-net4+win8+wpa+MonoAndroid+Xamarin.iOS\" />
-        <file src="Release\PCL45\AsIs.dll" target="lib\wpa\" />
+        <file src="Release\PCL40\AsIs.dll" target="lib\portable-net4+win8+wpa+MonoAndroid+Xamarin.iOS\AsIs.dll" />
+        <file src="Release\PCL45\AsIs.dll" target="lib\wpa\AsIs.dll" />
     </files>
 </package>

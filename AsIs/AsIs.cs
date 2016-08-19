@@ -9,21 +9,8 @@ using static System.Linq.Expressions.Expression;
 using TypeInfo = System.Type;
 #endif
 
-public static class AsIs
+public static partial class AsIs
 {
-    public static T Coalesce<T>(this T self, Action action)
-    {
-        action();
-        return self;
-    }
-    public static T Coalesce<T>(this T self, Action<T> action)
-    {
-        action(self);
-        return self;
-    }
-    public static T Run<T>(Func<T> func) => func();
-    public static void Run(Action logic) => logic();
-
     static readonly Type TypeObject = typeof(object);
     static readonly Type TypeNullable = typeof(Nullable<>);
     static readonly Type TypeIntPtr = typeof(IntPtr);
