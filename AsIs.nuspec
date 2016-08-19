@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
         <id>AsIs</id>
-        <version>0.9-a</version>
+        <version>0.9-b</version>
         <authors>OmniKits</authors>
         <projectUrl>https://github.com/OmniKits/as</projectUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>

@@ -49,7 +49,9 @@ public static class Singleton<T>
     }
 
     public static bool Register(Func<T> factory, bool? throwIfExist = null)
-     => Register(() => factory(), throwIfExist);
+     => Register(IsValueType ? () => factory() : (Func<object>)(MulticastDelegate)factory,
+         throwIfExist);
     public static T Register(T value, bool? throwIfExist = null)
-     => value.Coalesce(() => Register(() => (object)value, throwIfExist));
+     => value.Coalesce(() => Register(() => (object)value, 
+         throwIfExist));
 }
