@@ -17,6 +17,11 @@ public static class Singleton<T>
     static readonly bool IsValueType = ThisType.GetTypeInfo().IsValueType;
 #endif
 
+    static Singleton()
+    {
+        System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(ThisType.TypeHandle);
+    }
+
     static Lazy<object> LazyAccess
     {
         get { return Singleton.Singletons[ThisType]; }

@@ -8,9 +8,18 @@ using Xunit;
 
 public class SingletonTests
 {
+    class Nested {
+        static Nested()
+        {
+            Singleton<Nested>.Instance = null;
+        }
+    }
+
     [Fact]
     public void Test()
     {
+        Assert.Null(Singleton<Nested>.Instance);
+
         var guid = Guid.NewGuid();
         Singleton<Guid>.Register(guid);
         Assert.Equal(guid, Singleton<Guid>.Instance);
@@ -20,4 +29,3 @@ public class SingletonTests
         Assert.Equal(str, Singleton<string>.Instance);
     }
 }
-
