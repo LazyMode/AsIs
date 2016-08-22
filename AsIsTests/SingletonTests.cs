@@ -8,17 +8,32 @@ using Xunit;
 
 public class SingletonTests
 {
-    class Nested {
-        static Nested()
+    class A
+    {
+        static A()
         {
-            Singleton<Nested>.Instance = null;
+            Singleton<A>.Instance = null;
+        }
+
+        public A(object arg) { }
+    }
+
+    class B
+    {
+        static B()
+        {
+            Singleton<B>.Instance = null;
         }
     }
+
+    class C { }
 
     [Fact]
     public void Test()
     {
-        Assert.Null(Singleton<Nested>.Instance);
+        Assert.Null(Singleton<A>.Instance);
+        Assert.Null(Singleton<B>.Instance);
+        Assert.IsType<C>(Singleton<C>.Instance);
 
         var guid = Guid.NewGuid();
         Singleton<Guid>.Register(guid);

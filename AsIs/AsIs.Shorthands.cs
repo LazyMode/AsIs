@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using static System.Linq.Expressions.Expression;
 
 #if NO_TYPEINFO
 using TypeInfo = System.Type;
@@ -11,6 +6,13 @@ using TypeInfo = System.Type;
 
 public static partial class AsIs
 {
+    public static Func<T> CreationDelegateFor<T>()
+        where T : new()
+     => CreateNewHelper<T>.Proxy;
+    public static T CreateNew<T>()
+        where T : new()
+     => CreateNewHelper<T>.Proxy();
+
     public static T Coalesce<T>(this T self, Action action)
     {
         action();

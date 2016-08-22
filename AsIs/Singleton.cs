@@ -6,6 +6,8 @@ static class Singleton
 {
     internal static ConcurrentDictionary<Type, Lazy<object>> Singletons
         = new ConcurrentDictionary<Type, Lazy<object>>();
+
+    internal static Type[] NoType = new Type[0];
 }
 
 public static class Singleton<T>
@@ -19,7 +21,11 @@ public static class Singleton<T>
 
     static Singleton()
     {
-        System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(ThisType.TypeHandle);
+        var proxy = CreateNewHelper<T>.Proxy;
+        if (proxy == null)
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(ThisType.TypeHandle);
+        else
+            Register(proxy(), false);
     }
 
     static Lazy<object> LazyAccess
