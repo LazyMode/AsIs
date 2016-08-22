@@ -3,19 +3,15 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using static System.Linq.Expressions.Expression;
 
+using static System.Linq.Expressions.Expression;
 #if NO_TYPEINFO
 using TypeInfo = System.Type;
 #endif
+using static TypeHelper;
 
 public static partial class AsIs
 {
-    static readonly Type TypeObject = typeof(object);
-    static readonly Type TypeNullable = typeof(Nullable<>);
-    static readonly Type TypeIntPtr = typeof(IntPtr);
-    static readonly Type TypeUIntPtr = typeof(UIntPtr);
-
     static readonly ParameterExpression Param0 = Parameter(TypeObject);
 
     static Type GetNonNullable(TypeInfo type)
@@ -35,19 +31,6 @@ public static partial class AsIs
     }
 
 #if NO_TYPECODE
-    static readonly Type TypeSingle = typeof(float);
-    static readonly Type TypeDouble = typeof(double);
-
-    static readonly Type TypeByte = typeof(byte);
-    static readonly Type TypeSByte = typeof(sbyte);
-    static readonly Type TypeInt16 = typeof(short);
-    static readonly Type TypeUInt16 = typeof(ushort);
-    static readonly Type TypeInt32 = typeof(int);
-    static readonly Type TypeUInt32 = typeof(uint);
-    static readonly Type TypeInt64 = typeof(long);
-    static readonly Type TypeUInt64 = typeof(ulong);
-    static readonly Type TypeChar = typeof(char);
-
     static bool? IsPrimitiveIntegral(Type type)
     {
         if (type == TypeSingle || type == TypeDouble)

@@ -1,5 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Reflection;
+
+using static TypeHelper;
+
+public enum SingletonOverwriting
+{
+    ThrowIfExist,
+    ReturnWhenFail,
+    SkipOverConflict,
+    OverwriteAllTheWay,
+}
 
 static class Singleton
 {
@@ -7,6 +18,21 @@ static class Singleton
         = new ConcurrentDictionary<Type, Lazy<object>>();
 
     internal static Type[] NoType = new Type[0];
+
+    internal static bool IsAmbiguous(this Type type)
+    {
+        if (type == TypeObject)
+            return true;
+        if (type == TypeValueType)
+            return true;
+        if (type == TypeEnum)
+            return true;
+        if (type == TypeMulticastDelegate)
+            return true;
+        if (type == TypeDelegate)
+            return true;
+        return false;
+    }
 }
 
 public static class Singleton<T>
@@ -50,11 +76,63 @@ public static class Singleton<T>
 
         return false;
     }
-
     public static bool Register(Func<T> factory, bool? throwIfExist = null)
      => Register(TypeHelper<T>.IsValueType ? () => factory() : (Func<object>)(MulticastDelegate)factory,
          throwIfExist);
     public static T Register(T value, bool? throwIfExist = null)
      => value.Coalesce(() => Register(() => (object)value,
          throwIfExist));
+
+    static bool? Register(Func<object> factory, SingletonOverwriting behavior, Type ancestor = null)
+    {
+        var type = TypeHelper<T>.ThisType;
+        if (type.IsAmbiguous())
+            throw new InvalidOperationException();
+
+        var ancestorInfo = ancestor?.GetTypeInfo();
+        var typeInfo = TypeHelper<T>.ThisTypeInfo;
+        if (ancestorInfo != null)
+        {
+            if (!ancestorInfo.IsAssignableFrom(typeInfo))
+                throw new ArgumentException();
+            if (ancestor.IsAmbiguous() || ancestor == TypeVoid)
+                throw new ArgumentException();
+        }
+
+        var hasSucc = false;
+        var hasFail = false;
+        var lazy = new Lazy<object>(factory);
+
+        for (;;)
+        {
+            if (behavior == SingletonOverwriting.OverwriteAllTheWay)
+                Singleton.Singletons[type] = lazy;
+            else if (Singleton.Singletons.TryAdd(type, lazy))
+                hasSucc = true;
+            else
+            {
+                if (behavior == SingletonOverwriting.ThrowIfExist)
+                    throw new InvalidOperationException();
+
+                hasFail = true;
+
+                if (behavior == SingletonOverwriting.ReturnWhenFail)
+                    break;
+            }
+
+            if (type == ancestor) break;
+            type = typeInfo.BaseType;
+            if (type == null || type.IsAmbiguous()) break;
+            typeInfo = type.GetTypeInfo();
+        }
+
+        if (!hasFail) return true;
+        if (!hasSucc) return false;
+        return null;
+    }
+    public static bool? Register(Func<T> factory, SingletonOverwriting behavior, Type ancestor = null)
+     => Register(TypeHelper<T>.IsValueType ? () => factory() : (Func<object>)(MulticastDelegate)factory,
+         behavior, ancestor);
+    public static bool? Register(T value, SingletonOverwriting behavior, Type ancestor = null)
+     => Register(() => (object)value, behavior, ancestor);
 }
