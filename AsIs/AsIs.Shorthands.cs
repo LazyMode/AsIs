@@ -1,17 +1,9 @@
 ﻿using System;
 
-#if NO_TYPEINFO
-using TypeInfo = System.Type;
-#endif
-
 public static partial class AsIs
 {
-    public static Func<T> CreationDelegateFor<T>()
-        where T : new()
-     => CreateNewHelper<T>.Proxy;
-    public static T CreateNew<T>()
-        where T : new()
-     => CreateNewHelper<T>.Proxy();
+    public static Func<T> GetCreationDelegateFor<T>() => TypeHelper<T>.Proxy;
+    public static T CreateNew<T>() where T : new() => GetCreationDelegateFor<T>()();
 
     public static T Coalesce<T>(this T self, Action action)
     {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Reflection;
 
 static class Singleton
 {
@@ -12,17 +11,10 @@ static class Singleton
 
 public static class Singleton<T>
 {
-    static readonly Type ThisType = typeof(T);
-#if NO_TYPEINFO
-    static readonly bool IsValueType = ThisType.IsValueType;
-#else
-    static readonly bool IsValueType = ThisType.GetTypeInfo().IsValueType;
-#endif
-
     static Singleton()
     {
-        var proxy = CreateNewHelper<T>.Proxy;
-        System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(ThisType.TypeHandle);
+        var proxy = TypeHelper<T>.Proxy;
+        System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(TypeHelper<T>.ThisType.TypeHandle);
 
         if (proxy != null)
             Register(proxy, false);
@@ -30,8 +22,8 @@ public static class Singleton<T>
 
     static Lazy<object> LazyAccess
     {
-        get { return Singleton.Singletons[ThisType]; }
-        set { Singleton.Singletons[ThisType] = value; }
+        get { return Singleton.Singletons[TypeHelper<T>.ThisType]; }
+        set { Singleton.Singletons[TypeHelper<T>.ThisType] = value; }
     }
 
     public static T Instance
@@ -50,7 +42,7 @@ public static class Singleton<T>
             return true;
         }
 
-        if (Singleton.Singletons.TryAdd(ThisType, lazy))
+        if (Singleton.Singletons.TryAdd(TypeHelper<T>.ThisType, lazy))
             return true;
 
         if (throwIfExist.Value)
@@ -60,7 +52,7 @@ public static class Singleton<T>
     }
 
     public static bool Register(Func<T> factory, bool? throwIfExist = null)
-     => Register(IsValueType ? () => factory() : (Func<object>)(MulticastDelegate)factory,
+     => Register(TypeHelper<T>.IsValueType ? () => factory() : (Func<object>)(MulticastDelegate)factory,
          throwIfExist);
     public static T Register(T value, bool? throwIfExist = null)
      => value.Coalesce(() => Register(() => (object)value,

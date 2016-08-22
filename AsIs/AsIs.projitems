@@ -11,7 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AsIs.Shorthands.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AsIs.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)CreateNewHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TypeHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Properties\AssemblyInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Singleton.cs" />
   </ItemGroup>
