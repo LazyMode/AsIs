@@ -22,10 +22,10 @@ public static class Singleton<T>
     static Singleton()
     {
         var proxy = CreateNewHelper<T>.Proxy;
-        if (proxy == null)
-            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(ThisType.TypeHandle);
-        else
-            Register(proxy(), false);
+        System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(ThisType.TypeHandle);
+
+        if (proxy != null)
+            Register(proxy, false);
     }
 
     static Lazy<object> LazyAccess
